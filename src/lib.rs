@@ -202,6 +202,7 @@
 
 extern crate rustc_serialize;
 extern crate hyper;
+extern crate http;
 
 pub mod api;
 

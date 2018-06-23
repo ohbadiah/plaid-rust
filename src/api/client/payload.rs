@@ -8,7 +8,7 @@ use api::mfa;
 
 use rustc_serialize::{Encodable, Encoder};
 
-use hyper::method::Method;
+use hyper::Method;
 
 /// Use this enum to tell the client what you want to do
 /// with the associated product.

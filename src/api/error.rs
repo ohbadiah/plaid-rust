@@ -14,7 +14,7 @@ use rustc_serialize::json::{DecoderError, EncoderError};
 #[derive(Debug)]
 pub enum Error {
     /// Represents bad HTTP status codes, or codes that we don't support.
-    UnsuccessfulResponse(hyper::status::StatusCode),
+    UnsuccessfulResponse(hyper::StatusCode),
     /// Represents errors forwarded from `rustc_serialize`, usually indicating
     /// that the response returned something that could not be decoded.
     InvalidResponse(DecoderError),

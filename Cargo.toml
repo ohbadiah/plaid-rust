@@ -11,7 +11,8 @@ keywords = ["api", "plaid"]
 
 [dependencies]
 rustc-serialize = "0.3"
-hyper = "0.10"
+hyper = "0.12.2"
+http = "0.1.5"
 
 [dev-dependencies]
 yup-hyper-mock = "2.0"

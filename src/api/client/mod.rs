@@ -1,5 +1,6 @@
 //! Data structures and methods that interact with Plaid via HTTP.
 
+
 use std::io::Read;
 
 use api::user::User;
@@ -10,15 +11,15 @@ use api::mfa;
 use rustc_serialize::json;
 
 use hyper as h;
-use hyper::header::{ContentType, Accept, qitem};
-use hyper::mime::{Mime, TopLevel, SubLevel, Attr, Value};
-use hyper::status::StatusCode;
+use hyper::StatusCode;
 
 pub use self::payload::Payload;
 pub mod payload;
 
 pub use self::response::Response;
 pub mod response;
+
+use http::header::{HeaderName, HeaderValue};
 
 /// # Client
 ///
@@ -38,7 +39,7 @@ pub struct Client<'a> {
     /// *In most cases* you simply need `hyper::Client::new()`.
     /// However this is a good place to configure things like
     /// proxies, timeouts etc.
-    pub hyper: &'a h::Client
+    pub hyper: &'a h::Client<h::client::HttpConnector, h::Body>
 }
 
 impl<'a> Client<'a> {
@@ -53,13 +54,14 @@ impl<'a> Client<'a> {
         let endpoint = payload.endpoint(&self, product);
         let method = payload.method();
 
-        let mut res: h::client::Response = try!(
+        let mut res: h::Response<_> = try!(
             self.hyper
                 .request(method, endpoint.as_ref() as &str)
-                .header(ContentType(Mime(TopLevel::Application, SubLevel::Json, vec![])))
-                .header(Accept(vec![qitem(Mime(TopLevel::Application, SubLevel::Json,
-                                               vec![(Attr::Charset, Value::Utf8)]))]))
-                .body(h::client::Body::BufBody(&mut body, body_capacity))
+                .header(HeaderName::from_bytes("Content-Type".as_bytes()),
+                        HeaderValue::from_bytes("application/json".as_bytes()))
+                .header(HeaderName::from_bytes("Accept".as_bytes()),
+                        HeaderValue::from_bytes("application/json;charset=utf8".as_bytes()))
+                .body(h::Body::BufBody(&mut body, body_capacity))
                 .send());
 
         let mut buffer = String::new();
