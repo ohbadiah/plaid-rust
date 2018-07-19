@@ -52,13 +52,13 @@ use api::client::Payload;
 pub struct Auth;
 
 /// Representation of data that is retrieved from the `Auth` product.
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthData {
     /// List of accounts associated with the user
     pub accounts: Vec<Account>,
 }
 
-impl Product for Auth {
+impl<'de> Product<'de> for Auth {
     type Data = AuthData;
     fn description<'a>(&self) -> &'a str { "Auth" }
     fn endpoint<'a, 'b>(&self, payload: &'b Payload) -> &'a str {

@@ -53,7 +53,7 @@ use api::client::Payload;
 pub struct Connect;
 
 /// Representation of data that is retrieved from the `Connect` product.
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct ConnectData {
     /// List of accounts associated with the user
     pub accounts: Vec<Account>,
@@ -61,7 +61,7 @@ pub struct ConnectData {
     pub transactions: Vec<Transaction>
 }
 
-impl Product for Connect {
+impl<'de> Product<'de> for Connect {
     type Data = ConnectData;
     fn description<'a>(&self) -> &'a str { "Connect" }
     fn endpoint<'a, 'b>(&self, payload: &'b Payload) -> &'a str {

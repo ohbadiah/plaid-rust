@@ -49,14 +49,12 @@ use api::account::Account;
 use api::client::Payload;
 use api::data::{ Address, PhoneNumber, Email };
 
-use rustc_serialize::{ Decodable, Decoder };
-
 /// The definition of the Info Product.
 #[derive(Debug)]
 pub struct Info;
 
 /// Representation of data that is retrieved from the `Info` product.
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct InfoData {
     /// List of accounts associated with the user. When returned from the
     /// Info endpoint it will also include account and routing numbers.
@@ -66,7 +64,7 @@ pub struct InfoData {
 }
 
 /// Represents the *actual* info data from an info response.
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct InfoInternalData {
     /// Emails associated with the user.
     pub emails: Vec<Email>,
@@ -85,23 +83,23 @@ pub struct InfoAddress {
     pub address: Address
 }
 
-impl Decodable for InfoAddress {
+// impl Decodable for InfoAddress {
 
-    fn decode<D: Decoder>(d: &mut D) -> Result<InfoAddress, D::Error> {
-        d.read_struct("root", 2, |d| {
-            let primary = try!(d.read_struct_field("primary", 0, |d| Decodable::decode(d)));
-            d.read_struct_field("data", 1, |d| {
-                Ok(InfoAddress {
-                    primary: primary,
-                    address: try!(Decodable::decode(d))
-                })
-            })
-        })
-    }
+//     fn decode<D: Decoder>(d: &mut D) -> Result<InfoAddress, D::Error> {
+//         d.read_struct("root", 2, |d| {
+//             let primary = try!(d.read_struct_field("primary", 0, |d| Decodable::decode(d)));
+//             d.read_struct_field("data", 1, |d| {
+//                 Ok(InfoAddress {
+//                     primary: primary,
+//                     address: try!(Decodable::decode(d))
+//                 })
+//             })
+//         })
+//     }
 
-}
+// }
 
-impl Product for Info {
+impl<'de> Product<'de> for Info {
     type Data = InfoData;
     fn description<'a>(&self) -> &'a str { "Info" }
     fn endpoint<'a, 'b>(&self, payload: &'b Payload) -> &'a str {

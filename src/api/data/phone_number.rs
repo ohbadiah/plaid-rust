@@ -1,8 +1,6 @@
 //! Types to encapsulate a phone number, as represented by
 //! the Plaid API.
 
-use rustc_serialize::{ Decoder, Decodable };
-
 #[derive(Debug)]
 /// A user's phone number, as returned by Plaid.
 pub struct PhoneNumber {
@@ -14,19 +12,19 @@ pub struct PhoneNumber {
     pub phone_number: String
 }
 
-impl Decodable for PhoneNumber {
+// impl Decodable for PhoneNumber {
 
-    fn decode<D: Decoder>(d: &mut D) -> Result<PhoneNumber, D::Error> {
-        d.read_struct("root", 3, |d| {
-            Ok(PhoneNumber {
-                primary: try!(d.read_struct_field("primary", 0, |d| d.read_bool())),
-                phone_number_type: try!(d.read_struct_field("type", 1, |d| d.read_str())),
-                phone_number: try!(d.read_struct_field("data", 2, |d| d.read_str()))
-            })
-        })
-    }
+//     fn decode<D: Decoder>(d: &mut D) -> Result<PhoneNumber, D::Error> {
+//         d.read_struct("root", 3, |d| {
+//             Ok(PhoneNumber {
+//                 primary: try!(d.read_struct_field("primary", 0, |d| d.read_bool())),
+//                 phone_number_type: try!(d.read_struct_field("type", 1, |d| d.read_str())),
+//                 phone_number: try!(d.read_struct_field("data", 2, |d| d.read_str()))
+//             })
+//         })
+//     }
 
-}
+// }
 
 #[cfg(test)]
 mod tests {

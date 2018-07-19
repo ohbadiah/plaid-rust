@@ -1,7 +1,6 @@
 //! Representations of banking transactions.
 
 use api::data as t;
-use rustc_serialize::{ Decodable, Decoder };
 
 /// Represents a single transaction associated with a given `Account`.
 #[derive(Debug)]
@@ -33,31 +32,31 @@ pub struct Transaction {
 }
 
 /// Represents meta data associated with the transaction
-#[derive(RustcDecodable, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Meta {
     /// The location in which the transaction most likely occured.
     pub location: t::Address
 }
 
-impl Decodable for Transaction {
+// impl Decodable for Transaction {
 
-    fn decode<D: Decoder>(decoder: &mut D) -> Result<Transaction, D::Error> {
-        decoder.read_struct("root", 9, |d| {
-            Ok(Transaction {
-                id: try!(d.read_struct_field("_id", 0, |d| Decodable::decode(d))),
-                account_id: try!(d.read_struct_field("_account", 1, |d| Decodable::decode(d))),
-                amount: try!(d.read_struct_field("amount", 2, |d| Decodable::decode(d))),
-                category_id: try!(d.read_struct_field("category_id", 3, |d| Decodable::decode(d))),
-                context: try!(d.read_struct_field("type", 4, |d| Decodable::decode(d))),
-                categories: try!(d.read_struct_field("category", 5, |d| Decodable::decode(d))),
-                pending: try!(d.read_struct_field("pending", 6, |d| Decodable::decode(d))),
-                date: try!(d.read_struct_field("date", 7, |d| Decodable::decode(d))),
-                meta: try!(d.read_struct_field("meta", 8, |d| Decodable::decode(d)))
-            })
-        })
-    }
+//     fn decode<D: Decoder>(decoder: &mut D) -> Result<Transaction, D::Error> {
+//         decoder.read_struct("root", 9, |d| {
+//             Ok(Transaction {
+//                 id: try!(d.read_struct_field("_id", 0, |d| Decodable::decode(d))),
+//                 account_id: try!(d.read_struct_field("_account", 1, |d| Decodable::decode(d))),
+//                 amount: try!(d.read_struct_field("amount", 2, |d| Decodable::decode(d))),
+//                 category_id: try!(d.read_struct_field("category_id", 3, |d| Decodable::decode(d))),
+//                 context: try!(d.read_struct_field("type", 4, |d| Decodable::decode(d))),
+//                 categories: try!(d.read_struct_field("category", 5, |d| Decodable::decode(d))),
+//                 pending: try!(d.read_struct_field("pending", 6, |d| Decodable::decode(d))),
+//                 date: try!(d.read_struct_field("date", 7, |d| Decodable::decode(d))),
+//                 meta: try!(d.read_struct_field("meta", 8, |d| Decodable::decode(d)))
+//             })
+//         })
+//     }
 
-}
+// }
 
 /// The context in which a transaction took place
 #[derive(Debug)]
@@ -72,22 +71,22 @@ pub enum Context {
     Unresolved
 }
 
-impl Decodable for Context {
+// impl Decodable for Context {
 
-    fn decode<D: Decoder>(decoder: &mut D) -> Result<Context, D::Error> {
-        let s: String = try!(decoder.read_struct("root", 1, |d| {
-            d.read_struct_field("primary", 0, |d| Decodable::decode(d))
-        }));
+//     fn decode<D: Decoder>(decoder: &mut D) -> Result<Context, D::Error> {
+//         let s: String = try!(decoder.read_struct("root", 1, |d| {
+//             d.read_struct_field("primary", 0, |d| Decodable::decode(d))
+//         }));
 
-        Ok(match s.as_ref() {
-            "place" => Context::Place,
-            "digital" => Context::Digital,
-            "special" => Context::Special,
-            _ => Context::Unresolved
-        })
-    }
+//         Ok(match s.as_ref() {
+//             "place" => Context::Place,
+//             "digital" => Context::Digital,
+//             "special" => Context::Special,
+//             _ => Context::Unresolved
+//         })
+//     }
 
-}
+// }
 
 #[cfg(test)]
 mod tests {

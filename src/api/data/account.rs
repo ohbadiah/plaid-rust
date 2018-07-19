@@ -1,7 +1,6 @@
 //! Representations of a user's bank account.
 
 use api::types::*;
-use rustc_serialize::{ Decodable, Decoder };
 
 /// # Account
 /// Represents one account associated with the given `User`.
@@ -39,7 +38,7 @@ pub struct Account {
     pub meta: Option<Meta>
 }
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 /// Any meta-data associated with the account.
 pub struct Meta {
     /// Name of the account (e.g "Plaid credit card".)
@@ -51,51 +50,51 @@ pub struct Meta {
 }
 
 /// Accounts are decodable from JSON.
-impl Decodable for Account {
+// impl Decodable for Account {
 
-    fn decode<D: Decoder>(decoder: &mut D) -> Result<Account, D::Error> {
-        decoder.read_struct("root", 8, |decoder| {
-            let (current_balance, available_balance) =
-                try!(decoder.read_struct_field("balance", 0, |d| {
-                    d.read_struct("balance", 2, |d| {
-                        let c: Amount = try!(d.read_struct_field("current", 0, |d| Decodable::decode(d)));
-                        let a: Option<Amount> = try!(d.read_struct_field("available", 1, |d| Decodable::decode(d)));
-                        Ok((c, a))
-                    })
-                }));
+//     fn decode<D: Decoder>(decoder: &mut D) -> Result<Account, D::Error> {
+//         decoder.read_struct("root", 8, |decoder| {
+//             let (current_balance, available_balance) =
+//                 try!(decoder.read_struct_field("balance", 0, |d| {
+//                     d.read_struct("balance", 2, |d| {
+//                         let c: Amount = try!(d.read_struct_field("current", 0, |d| Decodable::decode(d)));
+//                         let a: Option<Amount> = try!(d.read_struct_field("available", 1, |d| Decodable::decode(d)));
+//                         Ok((c, a))
+//                     })
+//                 }));
 
-            let (account_number, routing_number, wire_routing_number) =
-                try!(decoder.read_struct_field("numbers", 1, |d| {
-                    d.read_option(|d, exists| {
-                        if exists {
-                            d.read_struct("numbers", 3, |d| {
-                                Ok((try!(d.read_struct_field("account", 0, |d| Decodable::decode(d))),
-                                    try!(d.read_struct_field("routing", 1, |d| Decodable::decode(d))),
-                                    try!(d.read_struct_field("wireRouting", 2, |d| Decodable::decode(d)))))
-                            })
-                        } else {
-                            Ok((None, None, None))
-                        }
-                    })
-                }));
+//             let (account_number, routing_number, wire_routing_number) =
+//                 try!(decoder.read_struct_field("numbers", 1, |d| {
+//                     d.read_option(|d, exists| {
+//                         if exists {
+//                             d.read_struct("numbers", 3, |d| {
+//                                 Ok((try!(d.read_struct_field("account", 0, |d| Decodable::decode(d))),
+//                                     try!(d.read_struct_field("routing", 1, |d| Decodable::decode(d))),
+//                                     try!(d.read_struct_field("wireRouting", 2, |d| Decodable::decode(d)))))
+//                             })
+//                         } else {
+//                             Ok((None, None, None))
+//                         }
+//                     })
+//                 }));
 
-            Ok(Account {
-                id: try!(decoder.read_struct_field("_id", 2, |d| Decodable::decode(d))),
-                item_id: try!(decoder.read_struct_field("_item", 3, |d| Decodable::decode(d))),
-                current_balance: current_balance,
-                available_balance: available_balance,
-                institution: try!(decoder.read_struct_field("institution_type", 4, |d| Decodable::decode(d))),
-                account_type: try!(decoder.read_struct_field("type", 5, |d| Decodable::decode(d))),
-                account_subtype: try!(decoder.read_struct_field("subtype", 6, |d| Decodable::decode(d))),
-                account_number: account_number,
-                routing_number: routing_number,
-                wire_routing_number: wire_routing_number,
-                meta: try!(decoder.read_struct_field("meta", 7, |d| Decodable::decode(d)))
-            })
-        })
-    }
+//             Ok(Account {
+//                 id: try!(decoder.read_struct_field("_id", 2, |d| Decodable::decode(d))),
+//                 item_id: try!(decoder.read_struct_field("_item", 3, |d| Decodable::decode(d))),
+//                 current_balance: current_balance,
+//                 available_balance: available_balance,
+//                 institution: try!(decoder.read_struct_field("institution_type", 4, |d| Decodable::decode(d))),
+//                 account_type: try!(decoder.read_struct_field("type", 5, |d| Decodable::decode(d))),
+//                 account_subtype: try!(decoder.read_struct_field("subtype", 6, |d| Decodable::decode(d))),
+//                 account_number: account_number,
+//                 routing_number: routing_number,
+//                 wire_routing_number: wire_routing_number,
+//                 meta: try!(decoder.read_struct_field("meta", 7, |d| Decodable::decode(d)))
+//             })
+//         })
+//     }
 
-}
+// }
 
 #[cfg(test)]
 mod tests {

@@ -200,7 +200,11 @@
 //! [info]: ./api/product/info/index.html
 //! [income]: ./api/product/income/index.html
 
-extern crate rustc_serialize;
+#[macro_use]
+extern crate serde_derive;
+
+extern crate serde;
+extern crate serde_json;
 extern crate hyper;
 extern crate http;
 

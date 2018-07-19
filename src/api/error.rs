@@ -7,7 +7,7 @@ use std::io::Error as IOError;
 use std::fmt;
 use http;
 use hyper;
-use rustc_serialize::json::{DecoderError, EncoderError};
+use serde::{de, ser};
 
 /// # Error
 /// Represents possible errors returned from the API.
@@ -18,7 +18,7 @@ pub enum Error {
     UnsuccessfulResponse(http::StatusCode),
     /// Represents errors forwarded from `rustc_serialize`, usually indicating
     /// that the response returned something that could not be decoded.
-    InvalidResponse(DecoderError),
+    InvalidResponse(de::Error),
     /// Represents an error forwarded from `hyper`, which means it is most
     /// likely HTTP (protocol, rather than status code) related.
     HTTP(hyper::Error),
@@ -76,17 +76,17 @@ impl From<http::Error> for Error {
     }
 }
 
-impl From<DecoderError> for Error {
+impl From<de::Error> for Error {
 
-    fn from(err: DecoderError) -> Error {
+    fn from(err: de::Error) -> Error {
         Error::InvalidResponse(err)
     }
 
 }
 
-impl From<EncoderError> for Error {
+impl From<ser::Error> for Error {
 
-    fn from(_: EncoderError) -> Error {
+    fn from(_: ser::Error) -> Error {
         Error::InternalError
     }
 

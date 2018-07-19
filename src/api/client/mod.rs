@@ -8,19 +8,19 @@ use api::product::*;
 use api::error::Error;
 use api::mfa;
 
-use rustc_serialize::json;
+use http::{Request, StatusCode};
+use http::header;
 
 use hyper as h;
 use hyper::rt::{Future};
+
+use serde_json;
 
 pub use self::payload::Payload;
 pub mod payload;
 
 pub use self::response::Response;
 pub mod response;
-
-use http::{Request, StatusCode};
-use http::header;
 
 /// # Client
 ///
@@ -47,9 +47,8 @@ impl<'a> Client<'a> {
 
     /// Make a request to the given [Product](../product/struct.Product.html), using a
     /// [Payload](./payload/struct.Payload.html) describing the intention of the operation.
-    pub fn request<P: Product>(&self, product: P, payload: Payload) -> Result<Response<P>, Error> {
+    pub fn request<P: Product<'a>>(&self, product: P, payload: Payload) -> Result<Response<P>, Error> {
 
-        let body = try!(json::encode(&payload));
         let endpoint = payload.endpoint(&self, product);
         let method = payload.method();
 
@@ -61,7 +60,7 @@ impl<'a> Client<'a> {
                              "application/json")
                      .header(header::ACCEPT,
                              "application/json;charset=utf8")
-                     .body(h::Body::from(body.into_bytes()))?)
+                     .body(serde_json::to_vec(&payload))?)
             .map(|res| {
                 let mut buffer = String::new();
                 match (res.status(), payload) {
@@ -69,25 +68,24 @@ impl<'a> Client<'a> {
                     // is missing the multi-factor authentication step.
                     (StatusCode::CREATED, Payload::Authenticate( .. )) |
                     (StatusCode::CREATED, Payload::Reauthenticate( .. )) => {
-                        let user: User = try!(json::decode(&mut buffer));
-                        let mfa_challenge: mfa::Challenge = try!(json::decode(&mut buffer));
+                        let (_, body) = res.into_parts();
+                        let user: User = try!(serde_json::from_slice(body));
+                        let mfa_challenge: mfa::Challenge = try!(serde_json::from_slice(body));
                         Ok(Response::MFA(user, mfa_challenge))
                     },
                     // A `200` response for authentication is accompanied with the
                     // endpoint data that was requested for.
                     (StatusCode::OK, Payload::Authenticate( .. )) |
                     (StatusCode::OK, Payload::StepMFA( .. )) => {
-                        //                        try!(res.read_to_string(&mut buffer));
-                        let mut buffer_copy = buffer.clone();
-                        let user: User = try!(json::decode(&mut buffer));
-                        let data: P::Data = try!(json::decode(&mut buffer_copy));
+                        let (_, body) = res.into_parts();
+                        let user: User = try!(serde_json::from_slice(body));
+                        let data: P::Data = try!(serde_json::from_slice(body));
                         Ok(Response::Authenticated(user, data))
                     },
                     // A `200` response for data requests
                     (StatusCode::OK, Payload::FetchData( .. )) => {
-                        //                        try!(res.read_to_string(&mut buffer));
-                        let mut buffer_copy = buffer.clone();
-                        let data: P::Data = try!(json::decode(&mut buffer_copy));
+                        let (_, body) = res.into_parts();
+                        let data: P::Data = try!(serde_json::from_slice(body));
                         Ok(Response::ProductData(data))
                     },
                     // By default, we assume a bad response

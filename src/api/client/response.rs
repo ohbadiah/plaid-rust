@@ -15,7 +15,7 @@ use api::user::User;
 ///
 /// For error handling, `Result` is used alongside `plaid::api::error::Error`.
 #[derive(Debug)]
-pub enum Response<P: Product> {
+pub enum Response<'de, P: Product<'de>> {
     /// Waiting on multifactor authentication code from the user
     MFA(User, mfa::Challenge),
     /// Returned when a request is made for a `Product` that is not

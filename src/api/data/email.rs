@@ -1,7 +1,5 @@
 //! Strucutres to encapsulate an email as returned by the Plaid API
 
-use rustc_serialize::{ Decoder, Decodable };
-
 #[derive(Debug)]
 /// A user's email, including meta data returned by Plaid.
 pub struct Email {
@@ -13,19 +11,19 @@ pub struct Email {
     pub email: String
 }
 
-impl Decodable for Email {
+// impl Decodable for Email {
 
-    fn decode<D: Decoder>(d: &mut D) -> Result<Email, D::Error> {
-        d.read_struct("root", 3, |d| {
-            Ok(Email {
-                primary: try!(d.read_struct_field("primary", 0, |d| d.read_bool())),
-                email_type: try!(d.read_struct_field("type", 1, |d| d.read_str())),
-                email: try!(d.read_struct_field("data", 2, |d| d.read_str()))
-            })
-        })
-    }
+//     fn decode<D: Decoder>(d: &mut D) -> Result<Email, D::Error> {
+//         d.read_struct("root", 3, |d| {
+//             Ok(Email {
+//                 primary: try!(d.read_struct_field("primary", 0, |d| d.read_bool())),
+//                 email_type: try!(d.read_struct_field("type", 1, |d| d.read_str())),
+//                 email: try!(d.read_struct_field("data", 2, |d| d.read_str()))
+//             })
+//         })
+//     }
 
-}
+// }
 
 #[cfg(test)]
 mod tests {

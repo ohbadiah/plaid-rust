@@ -6,8 +6,6 @@ use api::user::User;
 use api::client::Client;
 use api::mfa;
 
-use rustc_serialize::{Encodable, Encoder};
-
 use http::Method;
 
 /// Use this enum to tell the client what you want to do
@@ -30,7 +28,7 @@ pub enum Payload<'a> {
 impl<'a> Payload<'a> {
 
     /// Returns the desired endpoint of the payload, given a `Product`
-    pub fn endpoint<P: Product>(&self, client: &'a Client<'a>, product: P) -> String {
+    pub fn endpoint<P: Product<'a>>(&self, client: &'a Client<'a>, product: P) -> String {
         format!("{}{}", client.endpoint, product.endpoint(&self))
     }
 
@@ -48,57 +46,57 @@ impl<'a> Payload<'a> {
 
 }
 
-impl<'a> Encodable for Payload<'a> {
+// impl<'a> Encodable for Payload<'a> {
 
-    fn encode<S: Encoder>(&self, encoder: &mut S) -> Result<(), S::Error> {
-        match *self {
-            Payload::Authenticate(ref client, ref institution, ref username, ref password, ref pin, ref options) |
-            Payload::Reauthenticate(ref client, ref institution, ref username, ref password, ref pin, ref options) => {
-                let fields = if pin.is_some() { 7 } else { 6 };
-                encoder.emit_struct("Request", fields, |encoder| {
-                    try!(encoder.emit_struct_field("client_id", 0, |e| client.client_id.encode(e)));
-                    try!(encoder.emit_struct_field("secret", 1, |e| client.secret.encode(e)));
-                    try!(encoder.emit_struct_field("username", 2, |e| username.encode(e)));
-                    try!(encoder.emit_struct_field("password", 3, |e| password.encode(e)));
-                    try!(encoder.emit_struct_field("type", 4, |e| institution.encode(e)));
-                    try!(encoder.emit_struct_field("options", 5, |e| options.encode(e)));
-                    if pin.is_some() { try!(encoder.emit_struct_field("pin", 6, |e| pin.encode(e))); }
+//     fn encode<S: Encoder>(&self, encoder: &mut S) -> Result<(), S::Error> {
+//         match *self {
+//             Payload::Authenticate(ref client, ref institution, ref username, ref password, ref pin, ref options) |
+//             Payload::Reauthenticate(ref client, ref institution, ref username, ref password, ref pin, ref options) => {
+//                 let fields = if pin.is_some() { 7 } else { 6 };
+//                 encoder.emit_struct("Request", fields, |encoder| {
+//                     try!(encoder.emit_struct_field("client_id", 0, |e| client.client_id.encode(e)));
+//                     try!(encoder.emit_struct_field("secret", 1, |e| client.secret.encode(e)));
+//                     try!(encoder.emit_struct_field("username", 2, |e| username.encode(e)));
+//                     try!(encoder.emit_struct_field("password", 3, |e| password.encode(e)));
+//                     try!(encoder.emit_struct_field("type", 4, |e| institution.encode(e)));
+//                     try!(encoder.emit_struct_field("options", 5, |e| options.encode(e)));
+//                     if pin.is_some() { try!(encoder.emit_struct_field("pin", 6, |e| pin.encode(e))); }
 
-                    Ok(())
-                })
-            },
-            Payload::Upgrade(ref client, ref user, ref options) => {
-                encoder.emit_struct("Request", 1, |encoder| {
-                    try!(encoder.emit_struct_field("client_id", 0, |e| client.client_id.encode(e)));
-                    try!(encoder.emit_struct_field("secret", 1, |e| client.secret.encode(e)));
-                    try!(encoder.emit_struct_field("access_token", 2, |e| user.access_token.encode(e)));
-                    try!(encoder.emit_struct_field("options", 0, |e| options.encode(e)));
-                    Ok(())
-                })
-            },
-            Payload::StepMFA(ref client, ref user, ref mfa_response) => {
-                encoder.emit_struct("Request", 4, |encoder| {
-                    try!(encoder.emit_struct_field("client_id", 0, |e| client.client_id.encode(e)));
-                    try!(encoder.emit_struct_field("secret", 1, |e| client.secret.encode(e)));
-                    try!(encoder.emit_struct_field("access_token", 2, |e| user.access_token.encode(e)));
-                    try!(encoder.emit_struct_field("mfa", 3, |e| mfa_response.encode(e)));
-                    Ok(())
-                })
-            },
-            Payload::FetchData(ref client, ref user, Some(ref options)) => {
-                encoder.emit_struct("Request", 1, |encoder| {
-                    try!(encoder.emit_struct_field("client_id", 0, |e| client.client_id.encode(e)));
-                    try!(encoder.emit_struct_field("secret", 1, |e| client.secret.encode(e)));
-                    try!(encoder.emit_struct_field("access_token", 2, |e| user.access_token.encode(e)));
-                    try!(encoder.emit_struct_field("options", 0, |e| options.encode(e)));
-                    Ok(())
-                })
-            },
-            _ => Ok(())
-        }
-    }
+//                     Ok(())
+//                 })
+//             },
+//             Payload::Upgrade(ref client, ref user, ref options) => {
+//                 encoder.emit_struct("Request", 1, |encoder| {
+//                     try!(encoder.emit_struct_field("client_id", 0, |e| client.client_id.encode(e)));
+//                     try!(encoder.emit_struct_field("secret", 1, |e| client.secret.encode(e)));
+//                     try!(encoder.emit_struct_field("access_token", 2, |e| user.access_token.encode(e)));
+//                     try!(encoder.emit_struct_field("options", 0, |e| options.encode(e)));
+//                     Ok(())
+//                 })
+//             },
+//             Payload::StepMFA(ref client, ref user, ref mfa_response) => {
+//                 encoder.emit_struct("Request", 4, |encoder| {
+//                     try!(encoder.emit_struct_field("client_id", 0, |e| client.client_id.encode(e)));
+//                     try!(encoder.emit_struct_field("secret", 1, |e| client.secret.encode(e)));
+//                     try!(encoder.emit_struct_field("access_token", 2, |e| user.access_token.encode(e)));
+//                     try!(encoder.emit_struct_field("mfa", 3, |e| mfa_response.encode(e)));
+//                     Ok(())
+//                 })
+//             },
+//             Payload::FetchData(ref client, ref user, Some(ref options)) => {
+//                 encoder.emit_struct("Request", 1, |encoder| {
+//                     try!(encoder.emit_struct_field("client_id", 0, |e| client.client_id.encode(e)));
+//                     try!(encoder.emit_struct_field("secret", 1, |e| client.secret.encode(e)));
+//                     try!(encoder.emit_struct_field("access_token", 2, |e| user.access_token.encode(e)));
+//                     try!(encoder.emit_struct_field("options", 0, |e| options.encode(e)));
+//                     Ok(())
+//                 })
+//             },
+//             _ => Ok(())
+//         }
+//     }
 
-}
+// }
 
 /// The device that the user has chosen to use for mfa.
 #[derive(Debug)]
@@ -110,21 +108,21 @@ pub enum SelectedDevice {
     Device(mfa::Device)
 }
 
-impl Encodable for SelectedDevice {
+// impl Encodable for SelectedDevice {
 
-    fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
-        e.emit_struct("root", 1, |e| {
-            match *self {
-                SelectedDevice::Device(ref d) => e.emit_struct_field("type", 0, |e| d.encode(e)),
-                SelectedDevice::Mask(ref m) => e.emit_struct_field("mask", 0, |e| m.encode(e))
-            }
-        })
-    }
+//     fn encode<E: Encoder>(&self, e: &mut E) -> Result<(), E::Error> {
+//         e.emit_struct("root", 1, |e| {
+//             match *self {
+//                 SelectedDevice::Device(ref d) => e.emit_struct_field("type", 0, |e| d.encode(e)),
+//                 SelectedDevice::Mask(ref m) => e.emit_struct_field("mask", 0, |e| m.encode(e))
+//             }
+//         })
+//     }
 
-}
+// }
 
 /// Options that can be passed along to any `Payload::Authenticate` request.
-#[derive(Debug, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AuthenticateOptions {
     /// A webhook that should be used by Plaid when events are generated.
     webhook: Option<String>,
@@ -153,7 +151,7 @@ impl AuthenticateOptions {
 }
 
 /// Options that can be passed along to any `Payload::FetchData` request.
-#[derive(Debug, RustcEncodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct FetchDataOptions {
     /// This will filter out transactions that have occured before the given `Date`
     start_date: Option<Date>,

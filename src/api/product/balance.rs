@@ -50,13 +50,13 @@ use api::client::Payload;
 pub struct Balance;
 
 /// Representation of data that is retrieved from the `Balance` product.
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct BalanceData {
     /// List of accounts associated with the user
     pub accounts: Vec<Account>
 }
 
-impl Product for Balance {
+impl<'de> Product<'de> for Balance {
     type Data = BalanceData;
     fn description<'a>(&self) -> &'a str { "Balance" }
     fn endpoint<'a, 'b>(&self, payload: &'b Payload) -> &'a str {

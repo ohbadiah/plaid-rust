@@ -49,7 +49,7 @@ use api::data::{ Amount, Account };
 /// The Income endpoint.
 pub struct Income;
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 /// The underlying data representation of Income.
 pub struct IncomeData {
     /// A list of user accounts and their balances.
@@ -58,7 +58,7 @@ pub struct IncomeData {
     pub income: IncomeInternalData
 }
 
-impl Product for Income {
+impl<'de> Product<'de> for Income {
     type Data = IncomeData;
     fn description<'a>(&self) -> &'a str { "Income" }
     fn endpoint<'a, 'b>(&self, payload: &'b Payload) -> &'a str {
@@ -71,7 +71,7 @@ impl Product for Income {
     }
 }
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 /// Internal data representation of the income response
 pub struct IncomeInternalData {
     /// A list of income streams.
@@ -98,7 +98,7 @@ pub struct IncomeInternalData {
     pub number_of_income_streams: u64
 }
 
-#[derive(Debug, RustcDecodable)]
+#[derive(Serialize, Deserialize, Debug)]
 /// An income stream represents a stream of income that Plaid
 /// has detected from their transactions.
 pub struct IncomeStream {
