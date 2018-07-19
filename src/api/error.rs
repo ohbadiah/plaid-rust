@@ -5,6 +5,7 @@
 use std::error::Error as StdError;
 use std::io::Error as IOError;
 use std::fmt;
+use http;
 use hyper;
 use rustc_serialize::json::{DecoderError, EncoderError};
 
@@ -14,13 +15,15 @@ use rustc_serialize::json::{DecoderError, EncoderError};
 #[derive(Debug)]
 pub enum Error {
     /// Represents bad HTTP status codes, or codes that we don't support.
-    UnsuccessfulResponse(hyper::StatusCode),
+    UnsuccessfulResponse(http::StatusCode),
     /// Represents errors forwarded from `rustc_serialize`, usually indicating
     /// that the response returned something that could not be decoded.
     InvalidResponse(DecoderError),
     /// Represents an error forwarded from `hyper`, which means it is most
     /// likely HTTP (protocol, rather than status code) related.
     HTTP(hyper::Error),
+    /// TODO: Map this to other variants or collapse with hyper.
+    HTTP2(http::Error),
     /// Returned for errors that are forwarded from `std::io::Error`
     IO(IOError),
     /// This should happen very rarely, and indicates that something is most
@@ -43,6 +46,7 @@ impl StdError for Error {
             Error::UnsuccessfulResponse(_) => "Received bad status code",
             Error::InvalidResponse(ref err) => err.description(),
             Error::HTTP(ref err) => err.description(),
+            Error::HTTP2(ref err) => err.description(),
             Error::IO(ref err) => err.description(),
             Error::InternalError => "`plaid::api` internal error, please contact Plaid for support",
         }
@@ -64,6 +68,12 @@ impl From<hyper::Error> for Error {
         Error::HTTP(err)
     }
 
+}
+
+impl From<http::Error> for Error {
+    fn from(err: http::Error) -> Error {
+        Error::HTTP2(err)
+    }
 }
 
 impl From<DecoderError> for Error {

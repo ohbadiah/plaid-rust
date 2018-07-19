@@ -8,7 +8,7 @@ use api::mfa;
 
 use rustc_serialize::{Encodable, Encoder};
 
-use hyper::Method;
+use http::Method;
 
 /// Use this enum to tell the client what you want to do
 /// with the associated product.
@@ -37,12 +37,12 @@ impl<'a> Payload<'a> {
     /// Returns the `hyper::method::Method` to be used for the request
     pub fn method(&self) -> Method {
         match *self {
-            Payload::Authenticate(..) => Method::Post,
-            Payload::Reauthenticate(..) => Method::Patch,
-            Payload::Upgrade(..) => Method::Post,
-            Payload::RemoveUser(..) => Method::Delete,
-            Payload::StepMFA(..) => Method::Patch,
-            Payload::FetchData(..) => Method::Get,
+            Payload::Authenticate(..) => Method::POST,
+            Payload::Reauthenticate(..) => Method::PATCH,
+            Payload::Upgrade(..) => Method::POST,
+            Payload::RemoveUser(..) => Method::DELETE,
+            Payload::StepMFA(..) => Method::PATCH,
+            Payload::FetchData(..) => Method::GET,
         }
     }
 

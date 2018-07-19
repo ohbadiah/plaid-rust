@@ -1,7 +1,7 @@
 //! Data structures and methods that interact with Plaid via HTTP.
 
 
-use std::io::Read;
+use std::str;
 
 use api::user::User;
 use api::product::*;
@@ -11,7 +11,7 @@ use api::mfa;
 use rustc_serialize::json;
 
 use hyper as h;
-use hyper::StatusCode;
+use hyper::rt::{Future};
 
 pub use self::payload::Payload;
 pub mod payload;
@@ -19,7 +19,8 @@ pub mod payload;
 pub use self::response::Response;
 pub mod response;
 
-use http::header::{HeaderName, HeaderValue};
+use http::{Request, StatusCode};
+use http::header;
 
 /// # Client
 ///
@@ -49,53 +50,54 @@ impl<'a> Client<'a> {
     pub fn request<P: Product>(&self, product: P, payload: Payload) -> Result<Response<P>, Error> {
 
         let body = try!(json::encode(&payload));
-        let mut body = body.into_bytes();
-        let body_capacity = body.len();
         let endpoint = payload.endpoint(&self, product);
         let method = payload.method();
 
-        let mut res: h::Response<_> = try!(
-            self.hyper
-                .request(method, endpoint.as_ref() as &str)
-                .header(HeaderName::from_bytes("Content-Type".as_bytes()),
-                        HeaderValue::from_bytes("application/json".as_bytes()))
-                .header(HeaderName::from_bytes("Accept".as_bytes()),
-                        HeaderValue::from_bytes("application/json;charset=utf8".as_bytes()))
-                .body(h::Body::BufBody(&mut body, body_capacity))
-                .send());
-
-        let mut buffer = String::new();
-        match (res.status, payload) {
-            // A `201` indicates that the `User` has been created but
-            // is missing the multi-factor authentication step.
-            (StatusCode::Created, Payload::Authenticate( .. )) |
-            (StatusCode::Created, Payload::Reauthenticate( .. )) => {
-                try!(res.read_to_string(&mut buffer));
-                let user: User = try!(json::decode(&mut buffer));
-                let mfa_challenge: mfa::Challenge = try!(json::decode(&mut buffer));
-                Ok(Response::MFA(user, mfa_challenge))
-            },
-            // A `200` response for authentication is accompanied with the
-            // endpoint data that was requested for.
-            (StatusCode::Ok, Payload::Authenticate( .. )) |
-            (StatusCode::Ok, Payload::StepMFA( .. )) => {
-                try!(res.read_to_string(&mut buffer));
-                let mut buffer_copy = buffer.clone();
-                let user: User = try!(json::decode(&mut buffer));
-                let data: P::Data = try!(json::decode(&mut buffer_copy));
-                Ok(Response::Authenticated(user, data))
-            },
-            // A `200` response for data requests
-            (StatusCode::Ok, Payload::FetchData( .. )) => {
-                try!(res.read_to_string(&mut buffer));
-                let mut buffer_copy = buffer.clone();
-                let data: P::Data = try!(json::decode(&mut buffer_copy));
-                Ok(Response::ProductData(data))
-            },
-            // By default, we assume a bad response
-            (ref s, _) => return Err(Error::UnsuccessfulResponse(*s))
-        }
-
+        self.hyper
+            .request(Request::builder()
+                     .uri(endpoint.as_ref() as &str)
+                     .method(method)
+                     .header(header::CONTENT_TYPE,
+                             "application/json")
+                     .header(header::ACCEPT,
+                             "application/json;charset=utf8")
+                     .body(h::Body::from(body.into_bytes()))?)
+            .map(|res| {
+                let mut buffer = String::new();
+                match (res.status(), payload) {
+                    // A `201` indicates that the `User` has been created but
+                    // is missing the multi-factor authentication step.
+                    (StatusCode::CREATED, Payload::Authenticate( .. )) |
+                    (StatusCode::CREATED, Payload::Reauthenticate( .. )) => {
+                        let user: User = try!(json::decode(&mut buffer));
+                        let mfa_challenge: mfa::Challenge = try!(json::decode(&mut buffer));
+                        Ok(Response::MFA(user, mfa_challenge))
+                    },
+                    // A `200` response for authentication is accompanied with the
+                    // endpoint data that was requested for.
+                    (StatusCode::OK, Payload::Authenticate( .. )) |
+                    (StatusCode::OK, Payload::StepMFA( .. )) => {
+                        //                        try!(res.read_to_string(&mut buffer));
+                        let mut buffer_copy = buffer.clone();
+                        let user: User = try!(json::decode(&mut buffer));
+                        let data: P::Data = try!(json::decode(&mut buffer_copy));
+                        Ok(Response::Authenticated(user, data))
+                    },
+                    // A `200` response for data requests
+                    (StatusCode::OK, Payload::FetchData( .. )) => {
+                        //                        try!(res.read_to_string(&mut buffer));
+                        let mut buffer_copy = buffer.clone();
+                        let data: P::Data = try!(json::decode(&mut buffer_copy));
+                        Ok(Response::ProductData(data))
+                    },
+                    // By default, we assume a bad response
+                    (ref s, _) => return Err(Error::UnsuccessfulResponse(*s))
+                }
+            })
+            .map_err(|err| {
+                Error::HTTP(err)
+            })
+            .wait()?
     }
 
 }
